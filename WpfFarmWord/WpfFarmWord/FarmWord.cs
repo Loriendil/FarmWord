@@ -9,6 +9,8 @@ using System.Windows;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Validation;
 using DocumentFormat.OpenXml.Wordprocessing;
+// for using DataTable objects
+using System.Data;
 
 namespace WpfFarmWord
 {
@@ -52,7 +54,7 @@ namespace WpfFarmWord
             // https://docs.microsoft.com/en-us/previous-versions/office/developer/office-2010/ff951689(v=office.14)
             // 3. if-block for understand is it a new table or a next part from already excisting table
             // 4. make a remark
-            GetAllTables(filepath);
+            DataTable CleanedTable = ReadWordTables(filepath);
         }
         #region  Validation method
         private static void ValidateWordDocument(string filepath)
@@ -95,25 +97,88 @@ namespace WpfFarmWord
         #endregion
 
         #region method for retrive lists of tables
-        private static void GetAllTables(string filepath)
+        private static DataTable ReadWordTables(string filepath)
         {
-         
-            using (WordprocessingDocument doc =
-           WordprocessingDocument.Open(filepath, isEditable: false))
+            DataTable tableWithMess = null;
+            try
             {
-                List<Table> tables =
-                    doc.MainDocumentPart.Document.Body.Descendants<DocumentFormat.OpenXml.Wordprocessing.Table>().ToList();
-                //MessageBox.Show(tables.Count().ToString());
-
-                foreach (Table table in tables)
+                using (WordprocessingDocument doc =
+           WordprocessingDocument.Open(filepath, isEditable: false))
                 {
-                    
+                    List<Table> tables =
+                        doc.MainDocumentPart.Document.Body.Descendants<DocumentFormat.OpenXml.Wordprocessing.Table>().ToList();
+                    //MessageBox.Show(tables.Count().ToString());
+
+                    foreach (Table table in tables)
+                    {
+                        List<List<string>> totalRows = new List<List<string>>();
+                        int maxCol = 0;
+
+                        foreach (TableRow row in table.Elements<TableRow>())
+                        {
+                            List<string> tempRowValues = new List<string>();
+                            foreach (TableCell cell in row.Elements<TableCell>())
+                            {
+                                tempRowValues.Add(cell.InnerText);
+                            }
+
+                            maxCol = ProcessList(tempRowValues, totalRows, maxCol);
+                        }
+
+                        tableWithMess = ConvertListListStringToDataTable(totalRows, maxCol);
+                    }
+                    return tableWithMess;
                 }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.ToString()+ex.HelpLink);
+                return null;
+            }
                 
-            }    
         }
         #endregion 
+        /// <summary>
+        /// Add each row to the totalRows.
+        /// </summary>
+        /// <param name="tempRows"></param>
+        /// <param name="totalRows"></param>
+        /// <param name="MaxCol">the max column number in rows of the totalRows</param>
+        /// <returns></returns>
+        private static int ProcessList(List<string> tempRows, List<List<string>> totalRows, int MaxCol)
+        {
+            if (tempRows.Count > MaxCol)
+            {
+                MaxCol = tempRows.Count;
+            }
 
+            totalRows.Add(tempRows);
+            return MaxCol;
+        }
+
+        /// <summary>
+        /// This method converts list data to a data table
+        /// </summary>
+        /// <param name="totalRows"></param>
+        /// <param name="maxCol"></param>
+        /// <returns>returns datatable object</returns>
+        private static DataTable ConvertListListStringToDataTable(List<List<string>> totalRows, int maxCol)
+        {
+            DataTable table = new DataTable();
+            for (int i = 0; i < maxCol; i++)
+            {
+                table.Columns.Add();
+            }
+            foreach (List<string> row in totalRows)
+            {
+                while (row.Count < maxCol)
+                {
+                    row.Add("");
+                }
+                table.Rows.Add(row.ToArray());
+            }
+            return table;
+        }
 
     }
 }
