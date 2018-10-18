@@ -97,140 +97,23 @@ namespace WpfFarmWord
         #region method for retrive lists of tables
         private static void GetAllTables(string filepath)
         {
-            int rows = 10000;
-            int colomns = 5;
-            string[,] stds = new string[rows, colomns];
-           
-
+         
             using (WordprocessingDocument doc =
            WordprocessingDocument.Open(filepath, isEditable: false))
             {
                 List<Table> tables =
-                    doc.MainDocumentPart.Document.Body.Elements<Table>().ToList();
-                MessageBox.Show(tables.Count().ToString());
-
-                //List<Table> tables =
-                //    doc.MainDocumentPart.Document.Descendants<DocumentFormat.OpenXml.Wordprocessing.Table>().ToList();
-                // MessageBox.Show(tables.Count().ToString());
+                    doc.MainDocumentPart.Document.Body.Descendants<DocumentFormat.OpenXml.Wordprocessing.Table>().ToList();
+                //MessageBox.Show(tables.Count().ToString());
 
                 foreach (Table table in tables)
                 {
-                    int i = 0;
-                    int j = 0;
-                    while (i < rows)
-                    {
-                        foreach (var row in table.Descendants<TableRow>())
-                        {
-                            StringBuilder textBuilder = new StringBuilder();
-                            while (j < colomns)
-                            {
-                                
-                                foreach (var cell in row.Descendants<TableCell>())
-                                {
-                                
-                                
-                                    foreach (var para in cell.Descendants<Paragraph>())
-                                    {
-                                        foreach (var run in para.Descendants<Run>())
-                                        {
-                                            foreach (var text in run.Descendants<Text>())
-                                            {
-                                                textBuilder.Append(text.InnerText);
-
-                                            }
-                                        } 
-                                    }
-                                    stds[i, j] = textBuilder.ToString();
-                                    textBuilder.Clear();
-                                    j++;
-                                }
-                                i++;
-                            }
-                        }
-                        
-                    }
+                    
                 }
                 
-                MessageBox.Show(stds[2,4]);
             }    
         }
         #endregion 
-        #region method for clause 2 - disabled 
-        private static void CheckIsTablePart(Table table, List<Standard> stds)
-        {
-            string txt = "Элементы ";
-            // Find the second row in the table.
-            TableRow rowInd = table.Elements<TableRow>().ElementAt(1);
 
-            // Find the second cell in the row.
-            TableCell cellInd = rowInd.Elements<TableCell>().ElementAt(1);
 
-            // Find the first paragraph in the table cell.
-            Paragraph pInd = cellInd.Elements<Paragraph>().First();
-
-            // Find the first run in the paragraph.
-            Run rInd = pInd.Elements<Run>().First();
-
-            // Set the text for the run.
-            Text tInd = rInd.Elements<Text>().First();
-            if (IsTablePart(tInd, txt) == true)
-            {
-                // populate new List<> with new remark
-                MessageBox.Show(string.Format("This after call CheckIsTablePart, IsTablePart is true"));
-            }
-            else
-            {
-                StringBuilder textBuilder = new StringBuilder();
-                // continue populate List<> with old remark
-                MessageBox.Show(string.Format("This after call CheckIsTablePart, IsTablePart is false"));
-                //ProcessTable(table, textBuilder, stds);
-            }
-            
-        }
-        #endregion
-
-        #region method for clause 3 - disabled
-        private static bool IsTablePart(Text tInd, string txt)
-        {
-            
-                if (tInd.Text == txt)
-                {
-                    return true;
-                }
-                else
-                {
-                    return false;
-                }
-        }
-        #endregion
-
-        #region method for clause 4 - disabled
-        private static void ProcessTable(Table node, StringBuilder textBuilder, List<Standard> standd)
-        {
-            foreach (var row in node.Descendants<TableRow>())
-            {
-                foreach (var cell in row.Descendants<TableCell>())
-                {
-                    for (int i = 0; i < node.Elements<TableGrid>().First().Elements<GridColumn>().Count(); i++) //<- iterate instances
-                    {
-                        foreach (var para in cell.Descendants<Paragraph>())
-                        {
-                            standd[i].Name = ProcessParagraph(para, textBuilder); // <- all Names in all stadds fulfilled. Anothers not! Incorrect! 
-                        }
-                        // http://www.cyberforum.ru/csharp-beginners/thread1104040.html
-                    }
-                }
-            }
-        }
-
-        private static StringBuilder ProcessParagraph(Paragraph node, StringBuilder textBuilder)
-        {
-            foreach (var text in node.Descendants<Text>())
-            {
-                textBuilder.Append(text.InnerText);
-            }
-            return textBuilder;
-        }
-        #endregion
     }
 }
