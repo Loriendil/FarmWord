@@ -9,8 +9,10 @@ using System.Windows;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Validation;
 using DocumentFormat.OpenXml.Wordprocessing;
-// for using DataTable objects
-using System.Data;
+
+//for OutPut method & some types in ReadingWordTables required. 
+using System.Data; // for using DataTable objects
+using System.IO;
 
 namespace WpfFarmWord
 {
@@ -45,16 +47,20 @@ namespace WpfFarmWord
             // https://docs.microsoft.com/en-us/office/open-xml/how-to-validate-a-word-processing-document
             ValidateWordDocument(filepath);
 
-            // 2. retrive text from cell[2,1] 
+            // 2. Bibliography section
             // Search and replace text 
             // https://docs.microsoft.com/en-us/office/open-xml/how-to-search-and-replace-text-in-a-document-part
             // Change text in cell (Word)
             // https://docs.microsoft.com/en-us/office/open-xml/how-to-change-text-in-a-table-in-a-word-processing-document#change-text-in-a-cell-in-a-table
             // Vertical cells
             // https://docs.microsoft.com/en-us/previous-versions/office/developer/office-2010/ff951689(v=office.14)
-            // 3. if-block for understand is it a new table or a next part from already excisting table
-            // 4. make a remark
-            DataTable CleanedTable = ReadWordTables(filepath);
+             
+            DataTable TableNeedsPolish = ReadWordTables(filepath);
+
+            ////////////////////Testing!////////////////////////
+            OutPut(TableNeedsPolish);
+            ///////An illusion! What are you hiding?///////////
+
         }
         #region  Validation method
         private static void ValidateWordDocument(string filepath)
@@ -96,24 +102,25 @@ namespace WpfFarmWord
         }
         #endregion
 
-        #region method for retrive lists of tables
+        /// <summary>
+        /// Read text from all cells from all tables in Word document as they populated by author of file. 
+        /// </summary>
+        /// <param name="filepath">path to source file with data, that populated into tables with hard structure.</param>
+        /// <returns>DataTable object for usage as source for anyone user</returns>
         private static DataTable ReadWordTables(string filepath)
         {
             DataTable tableWithMess = null;
             try
             {
-                using (WordprocessingDocument doc =
-           WordprocessingDocument.Open(filepath, isEditable: false))
+                using (WordprocessingDocument doc = WordprocessingDocument.Open(filepath, isEditable: false))
                 {
                     List<Table> tables =
                         doc.MainDocumentPart.Document.Body.Descendants<DocumentFormat.OpenXml.Wordprocessing.Table>().ToList();
-                    //MessageBox.Show(tables.Count().ToString());
+                    List<List<string>> totalRows = new List<List<string>>();
 
                     foreach (Table table in tables)
                     {
-                        List<List<string>> totalRows = new List<List<string>>();
                         int maxCol = 0;
-
                         foreach (TableRow row in table.Elements<TableRow>())
                         {
                             List<string> tempRowValues = new List<string>();
@@ -121,23 +128,22 @@ namespace WpfFarmWord
                             {
                                 tempRowValues.Add(cell.InnerText);
                             }
-
                             maxCol = ProcessList(tempRowValues, totalRows, maxCol);
                         }
-
                         tableWithMess = ConvertListListStringToDataTable(totalRows, maxCol);
                     }
                     return tableWithMess;
                 }
             }
+
             catch (Exception ex)
             {
-                MessageBox.Show(ex.ToString()+ex.HelpLink);
+                MessageBox.Show(ex.ToString());
                 return null;
             }
-                
+
         }
-        #endregion 
+        
         /// <summary>
         /// Add each row to the totalRows.
         /// </summary>
@@ -180,5 +186,29 @@ namespace WpfFarmWord
             return table;
         }
 
+        /// <summary>
+        /// This method prints dataTable to TXT file
+        /// </summary>
+        /// <param name="dataTable"></param>
+        private void OutPut(DataTable dataTable)
+        {
+            StreamWriter swExtLogFile = new StreamWriter(@"D:\Users\Dreamwalker\source\repos\Accreditation scope generator\WpfFarmWord\WpfFarmWord\bin\Debug\log.txt", true);
+
+            int i;
+            swExtLogFile.Write(Environment.NewLine);
+            foreach (DataRow row in dataTable.Rows)
+            {
+                object[] array = row.ItemArray;
+                for (i = 0; i < array.Length - 1; i++)
+                {
+                    swExtLogFile.Write(array[i].ToString() + " | ");
+                }
+                swExtLogFile.WriteLine(array[i].ToString());
+            }
+            swExtLogFile.Write("*****END OF DATA****" + DateTime.Now.ToString());
+            swExtLogFile.Flush();
+            swExtLogFile.Close();
+        }
+        
     }
 }
