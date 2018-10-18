@@ -39,9 +39,11 @@ namespace WpfFarmWord
 
     class FarmWord
     {
-        public FarmWord(string filepath)
+        public FarmWord(string filename, string path)
 
         {
+
+            string filepath = path + filename;
             // 1. validation of file before read-write procedure.
             // This code has been taken from Open XML SDK:
             // https://docs.microsoft.com/en-us/office/open-xml/how-to-validate-a-word-processing-document
@@ -58,7 +60,7 @@ namespace WpfFarmWord
             DataTable TableNeedsPolish = ReadWordTables(filepath);
 
             ////////////////////Testing!////////////////////////
-            OutPut(TableNeedsPolish);
+            OutPut(TableNeedsPolish, path);
             ///////An illusion! What are you hiding?///////////
 
         }
@@ -190,9 +192,11 @@ namespace WpfFarmWord
         /// This method prints dataTable to TXT file
         /// </summary>
         /// <param name="dataTable"></param>
-        private void OutPut(DataTable dataTable)
+        private void OutPut(DataTable dataTable, string path)
         {
-            StreamWriter swExtLogFile = new StreamWriter(@"D:\Users\Dreamwalker\source\repos\Accreditation scope generator\WpfFarmWord\WpfFarmWord\bin\Debug\log.txt", true);
+            string logName = "\\log.txt";
+            string pathToFile = path + logName;
+            StreamWriter swExtLogFile = new StreamWriter(pathToFile, true);
 
             int i;
             swExtLogFile.Write(Environment.NewLine);

@@ -27,12 +27,13 @@ namespace WpfFarmWord
 
         private void Button_Click(object sender, RoutedEventArgs e)
         {
-            string filepath = System.IO.Path.
-                GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)
-                + "\\004.docx";
+            string filename = "\\004.docx";
+            string path = System.IO.Path.
+                GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
+            
 //@"C:\Users\1\source\repos\WpfFarmWord\WpfFarmWord\bin\Debug\004.docx";
             //@"C:\Users\1\Documents\Visual Studio 2012\Projects\WpfFarmingWord\WpfFarmingWord\bin\Debug\004.docx";
-            FarmWord fw = new FarmWord(filepath);
+            FarmWord fw = new FarmWord(filename, path);
         }
     }
 }
