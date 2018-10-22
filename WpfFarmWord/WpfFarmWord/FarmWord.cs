@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 
 // for using Open XML SDK
@@ -13,6 +11,8 @@ using DocumentFormat.OpenXml.Wordprocessing;
 //for OutPut method & some types in ReadingWordTables required. 
 using System.Data; // for using DataTable objects
 using System.IO;
+// for Regex
+using System.Text.RegularExpressions;
 
 namespace WpfFarmWord
 {
@@ -56,15 +56,16 @@ namespace WpfFarmWord
             // https://docs.microsoft.com/en-us/office/open-xml/how-to-change-text-in-a-table-in-a-word-processing-document#change-text-in-a-cell-in-a-table
             // Vertical cells
             // https://docs.microsoft.com/en-us/previous-versions/office/developer/office-2010/ff951689(v=office.14)
-             
-            DataTable TableNeedsPolish = ReadWordTables(filepath);
 
-            ////////////////////Testing!////////////////////////
+            List<List<string>> tableFulled = new List<List<string>>();
+            DataTable TableNeedsPolish = ReadWordTables(filepath, tableFulled);
             OutPut(TableNeedsPolish, path);
-            ///////An illusion! What are you hiding?///////////
-
         }
-        #region  Validation method
+
+        /// <summary>
+        /// Validate document before using.
+        /// </summary>
+        /// <param name="filepath">path to source file with data, that populated into tables with hard structure.</param>
         private static void ValidateWordDocument(string filepath)
         {
             using (WordprocessingDocument wordprocessingDocument =
@@ -102,16 +103,16 @@ namespace WpfFarmWord
                 wordprocessingDocument.Close();
             }
         }
-        #endregion
 
         /// <summary>
         /// Read text from all cells from all tables in Word document as they populated by author of file. 
         /// </summary>
         /// <param name="filepath">path to source file with data, that populated into tables with hard structure.</param>
         /// <returns>DataTable object for usage as source for anyone user</returns>
-        private static DataTable ReadWordTables(string filepath)
+        private static DataTable ReadWordTables(string filepath, List<List<string>> tableFulled)
         {
             DataTable tableWithMess = null;
+
             try
             {
                 using (WordprocessingDocument doc = WordprocessingDocument.Open(filepath, isEditable: false))
@@ -131,6 +132,7 @@ namespace WpfFarmWord
                                 tempRowValues.Add(cell.InnerText);
                             }
                             maxCol = ProcessList(tempRowValues, totalRows, maxCol);
+                            maxCol = ProcessList(tempRowValues, tableFulled, maxCol);
                         }
                         tableWithMess = ConvertListListStringToDataTable(totalRows, maxCol);
                     }
@@ -213,6 +215,34 @@ namespace WpfFarmWord
             swExtLogFile.Flush();
             swExtLogFile.Close();
         }
-        
+
+        /// <summary>
+        /// Under testing!
+        /// Usage Regex for clean string from field code HYPERLINK 
+        /// </summary>
+        /// <param name="target">Source for clean in type List<List<string>></param>
+        /// <returns>Cleaned table</returns>
+        private static DataTable CleantableFromMess(List<List<string>> targets)
+        {
+            DataTable outsource = new DataTable();
+            /*
+             *  HYPERLINK "kodeks://link/d?nd=902299536"\o"’’О безопасности низковольтного оборудования (с изменениями на 9 декабря 2011 года)’’
+             *  (утв. решением Комиссии Таможенного союза от 16.08.2011 N 768)Технический регламент Таможенного союза от ...Статус: действующая
+             *  редакция (действ. с 15.12.2011)"
+             */
+            string pattern = @"HYPERLINK\s*\b""\b";
+            Regex rgx = new Regex(pattern);
+            int maxCol = 5; // On 2nd renew need to take it from method ReadWordTables()
+            string cleanedArrow = string.Empty;
+            foreach (var target in targets)
+            {
+                for(int i = 0; i<maxCol; i++)
+                {
+                    cleanedArrow = rgx.Replace(target, );
+                }
+            }
+            return outsource;
+        }
+
     }
 }
