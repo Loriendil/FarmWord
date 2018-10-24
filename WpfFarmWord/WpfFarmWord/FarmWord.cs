@@ -57,7 +57,6 @@ namespace WpfFarmWord
             // https://docs.microsoft.com/en-us/office/open-xml/how-to-change-text-in-a-table-in-a-word-processing-document#change-text-in-a-cell-in-a-table
             // Vertical cells
             // https://docs.microsoft.com/en-us/previous-versions/office/developer/office-2010/ff951689(v=office.14)
-
             List<List<string>> tableFulled = new List<List<string>>();
             DataTable TableNeedsPolish = ReadWordTables(filepath, tableFulled);
             DataTable TableAfterPolish = CleantableFromMess(tableFulled);
@@ -139,6 +138,7 @@ namespace WpfFarmWord
                         }
                         tableWithMess = ConvertListListStringToDataTable(totalRows, maxCol);
                     }
+                    
                     return tableWithMess;
                 }
             }
@@ -210,7 +210,7 @@ namespace WpfFarmWord
                 object[] array = row.ItemArray;
                 for (i = 0; i < array.Length - 1; i++)
                 {
-                    swExtLogFile.Write(array[i].ToString() + " | ");
+                    swExtLogFile.Write(array[i].ToString() + "|");
                 }
                 swExtLogFile.WriteLine(array[i].ToString());
             }
@@ -220,7 +220,6 @@ namespace WpfFarmWord
         }
 
         /// <summary>
-        /// Under testing!
         /// Usage Regex for clean string from field code HYPERLINK 
         /// </summary>
         /// <param name="target">Source for clean in type List<List<string>></param>
@@ -228,25 +227,24 @@ namespace WpfFarmWord
         private static DataTable CleantableFromMess(List<List<string>> targets)
         {
             DataTable outsource = new DataTable();
-            
-            string pattern = @"HYPERLINK\s*\b""\b";
-            Regex rgx = new Regex(pattern);
+            string markword = "Примечание ";
             int maxCol = 5; // On 2nd renew need to take it from method ReadWordTables()
             string cleanedArrow = string.Empty;
             foreach (var target in targets)
             {
-                for(int i = 0; i<maxCol; i++)
+                for (int i = 0; i < maxCol; i++)
                 {
                     string temp = target[i].ToString();
-                    cleanedArrow = SsTR(temp);
+                    cleanedArrow = cleanFromHyperlinks(temp);
                     target[i] = cleanedArrow;
                 }
             }
-            outsource = ConvertListListStringToDataTable(targets, maxCol);
-            return outsource;
+           targets = DeleteHeaderAndSubHeaderStrings(targets, markword);
+           outsource = ConvertListListStringToDataTable(targets, maxCol);
+           return outsource;
         }
 
-        private static string SsTR(string str)
+        private static string cleanFromHyperlinks(string str)
         {
             string temp = str;
             string replacement = "";
@@ -272,6 +270,84 @@ namespace WpfFarmWord
             }
             while (temp.Contains("+"));
             return temp;
+        }
+
+
+
+        /// <summary>
+        /// Method deletes from list every row contains mark word
+        /// </summary>
+        /// <param name="listOfTargets">list of arrows of strings that reprecent a table from Word document</param>
+        /// <param name="variable">Variable represents a mark of row</param>
+        /// <returns>List of arrows of strings without row with mark word.</returns>
+        private static List<List<string>> DeleteHeaderAndSubHeaderStrings(List<List<string>> listOfTargets, string variable)
+        {
+            foreach (List<string> targets in listOfTargets.ToList())
+            {
+                foreach (string target in targets.ToList())
+                {
+                    int numOfColomns = targets.Count();
+                    int indexOfTarElem = targets.FindIndex(x => x == variable);
+                    if (indexOfTarElem != -1)
+                    {
+                        targets.RemoveRange(0, numOfColomns);
+                    }
+                    if (IsItNumber(target) == true)
+                    {
+                        int count = 0;
+                        List<int> indexs = new List<int>();
+                        indexs.Add(targets.IndexOf(target));
+                        if (count <= numOfColomns)
+                        {
+                            foreach (int index in indexs)
+                            {
+                                targets.RemoveAt(index);
+                            }
+                        }
+                        count++;
+                    }
+                    if (string.IsNullOrWhiteSpace(target))
+                    {
+                        int count = 0;
+                        List<int> indexs = new List<int>();
+                        indexs.Add(targets.IndexOf(target));
+                        if (count <= numOfColomns)
+                        {
+                            foreach (int index in indexs)
+                            {
+                                targets.RemoveAt(index);
+                            }
+                        }
+                        count++;
+                    }
+                }
+            }
+            return listOfTargets;
+        }
+ 
+        /// <summary>
+        /// Methods determine input string is it integer or not
+        /// </summary>
+        /// <param name="target"> input string</param>
+        /// <returns>bool value: true, input string is an integer, false: input string is not. 
+        /// Optional, int.TryParse() returns integer that stored as string variable.</returns>
+        private static bool IsItNumber(string target)
+        {
+            if (!String.IsNullOrEmpty(target))
+            {
+                int intValue;
+                bool myValue = int.TryParse(target, out intValue);
+                if (myValue)
+                {
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+            else
+                return false;
         }
     }
 }
