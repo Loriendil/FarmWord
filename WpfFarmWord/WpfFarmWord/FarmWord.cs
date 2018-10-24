@@ -12,6 +12,7 @@ using DocumentFormat.OpenXml.Wordprocessing;
 using System.Data; // for using DataTable objects
 using System.IO;
 // for Regex
+using System.Text;
 using System.Text.RegularExpressions;
 
 namespace WpfFarmWord
@@ -59,7 +60,9 @@ namespace WpfFarmWord
 
             List<List<string>> tableFulled = new List<List<string>>();
             DataTable TableNeedsPolish = ReadWordTables(filepath, tableFulled);
-            OutPut(TableNeedsPolish, path);
+            DataTable TableAfterPolish = CleantableFromMess(tableFulled);
+            //OutPut(TableNeedsPolish, path);
+            OutPut(TableAfterPolish, path);
         }
 
         /// <summary>
@@ -238,11 +241,41 @@ namespace WpfFarmWord
             {
                 for(int i = 0; i<maxCol; i++)
                 {
-                    cleanedArrow = rgx.Replace(target, );
+                    string temp = target[i].ToString();
+                    cleanedArrow = SsTR(temp);
+                    target[i] = temp;
                 }
             }
+            outsource = ConvertListListStringToDataTable(targets, maxCol);
             return outsource;
         }
 
+        private static string SsTR(string str)
+        {
+            string temp = str;
+            string replacement = "";
+            do
+            {
+                if (temp.Contains("HYPERLINK"))
+                {
+                    string start = "HYPERLINK\\s*\"(.*?)\"";
+                    string sNext = @"\\o\s*";
+                    string s = "\"(.*?)\"";
+                    string pattern = start + sNext + s;
+                    Regex regex = new Regex(pattern);
+                    temp = regex.Replace(temp, replacement);
+                }
+                if (temp.Contains("+"))
+                {
+                    string ss = @"\s*\+\s*";
+                    string s1 = "\"(.*?)\"";
+                    string pattern = ss + s1;
+                    Regex regex = new Regex(pattern);
+                    temp = regex.Replace(temp, replacement);
+                }
+            }
+            while (temp.Contains("+"));
+            return temp;
+        }
     }
 }
