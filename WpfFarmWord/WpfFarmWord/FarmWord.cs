@@ -228,11 +228,7 @@ namespace WpfFarmWord
         private static DataTable CleantableFromMess(List<List<string>> targets)
         {
             DataTable outsource = new DataTable();
-            /*
-             *  HYPERLINK "kodeks://link/d?nd=902299536"\o"’’О безопасности низковольтного оборудования (с изменениями на 9 декабря 2011 года)’’
-             *  (утв. решением Комиссии Таможенного союза от 16.08.2011 N 768)Технический регламент Таможенного союза от ...Статус: действующая
-             *  редакция (действ. с 15.12.2011)"
-             */
+            
             string pattern = @"HYPERLINK\s*\b""\b";
             Regex rgx = new Regex(pattern);
             int maxCol = 5; // On 2nd renew need to take it from method ReadWordTables()
@@ -243,7 +239,7 @@ namespace WpfFarmWord
                 {
                     string temp = target[i].ToString();
                     cleanedArrow = SsTR(temp);
-                    target[i] = temp;
+                    target[i] = cleanedArrow;
                 }
             }
             outsource = ConvertListListStringToDataTable(targets, maxCol);
