@@ -228,15 +228,17 @@ namespace WpfFarmWord
         {
             DataTable outsource = new DataTable();
             string markword = "Примечание ";
-            int maxCol = 5; // On 2nd renew need to take it from method ReadWordTables()
+            int maxCol = 0; // On 2nd renew need to take it from method ReadWordTables()
             string cleanedArrow = string.Empty;
-            foreach (var target in targets)
+            foreach (List<string> target in targets)
             {
+                maxCol = target.Count;
                 for (int i = 0; i < maxCol; i++)
                 {
                     string temp = target[i].ToString();
                     cleanedArrow = cleanFromHyperlinks(temp);
                     target[i] = cleanedArrow;
+                    //target.Insert(i, cleanedArrow);
                 }
             }
            targets = DeleteHeaderAndSubHeaderStrings(targets, markword);
