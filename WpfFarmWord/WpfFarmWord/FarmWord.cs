@@ -57,10 +57,9 @@ namespace WpfFarmWord
             // https://docs.microsoft.com/en-us/office/open-xml/how-to-change-text-in-a-table-in-a-word-processing-document#change-text-in-a-cell-in-a-table
             // Vertical cells
             // https://docs.microsoft.com/en-us/previous-versions/office/developer/office-2010/ff951689(v=office.14)
-            List<List<string>> tableFulled = new List<List<string>>();
-            DataTable TableNeedsPolish = ReadWordTables(filepath, tableFulled);
-            DataTable TableAfterPolish = CleantableFromMess(tableFulled);
-            //OutPut(TableNeedsPolish, path);
+
+            var tableFulled = ReadWordTables(filepath);
+            DataTable TableAfterPolish = CleantableFromMess(tableFulled.Key, tableFulled.Value);
             OutPut(TableAfterPolish, path);
         }
 
@@ -110,10 +109,9 @@ namespace WpfFarmWord
         /// Read text from all cells from all tables in Word document as they populated by author of file. 
         /// </summary>
         /// <param name="filepath">path to source file with data, that populated into tables with hard structure.</param>
-        /// <returns>DataTable object for usage as source for anyone user</returns>
-        private static DataTable ReadWordTables(string filepath, List<List<string>> tableFulled)
+        /// <returns>Tuple<> object for usage as source for anyone user. Tuples returns 2 valiable!</returns>
+        private static KeyValuePair<List<List<string>>, int> ReadWordTables(string filepath)
         {
-            DataTable tableWithMess = null;
 
             try
             {
@@ -122,6 +120,7 @@ namespace WpfFarmWord
                     List<Table> tables =
                         doc.MainDocumentPart.Document.Body.Descendants<DocumentFormat.OpenXml.Wordprocessing.Table>().ToList();
                     List<List<string>> totalRows = new List<List<string>>();
+                    int oMax = 0;
 
                     foreach (Table table in tables)
                     {
@@ -134,30 +133,25 @@ namespace WpfFarmWord
                                 tempRowValues.Add(cell.InnerText);
                             }
                             maxCol = ProcessList(tempRowValues, totalRows, maxCol);
-                            maxCol = ProcessList(tempRowValues, tableFulled, maxCol);
+                            oMax = maxCol;
                         }
-                        tableWithMess = ConvertListListStringToDataTable(totalRows, maxCol);
-                    }
-                    
-                    return tableWithMess;
+                    }                    
+                    return new KeyValuePair<List<List<string>>, int>(totalRows, oMax);
                 }
             }
-
             catch (Exception ex)
             {
-                MessageBox.Show(ex.ToString());
-                return null;
+                string error = ex.ToString();
+                MessageBox.Show(error);
+                List<string> expr = new List<string>();
+                expr.Add(error);
+                List<List<string>> express = new List<List<string>>();
+                express.Add(expr);
+                return new KeyValuePair<List<List<string>>, int>(express, -1);
             }
-
         }
+
         
-        /// <summary>
-        /// Add each row to the totalRows.
-        /// </summary>
-        /// <param name="tempRows"></param>
-        /// <param name="totalRows"></param>
-        /// <param name="MaxCol">the max column number in rows of the totalRows</param>
-        /// <returns></returns>
         private static int ProcessList(List<string> tempRows, List<List<string>> totalRows, int MaxCol)
         {
             if (tempRows.Count > MaxCol)
@@ -190,6 +184,12 @@ namespace WpfFarmWord
                 }
                 table.Rows.Add(row.ToArray());
             }
+            
+            table = table.Rows
+                    .Cast<DataRow>()
+                    .Where(row => !row.ItemArray.All(field => field is DBNull ||
+                                    string.IsNullOrWhiteSpace(field as string)))
+                    .CopyToDataTable();
             return table;
         }
 
@@ -224,11 +224,10 @@ namespace WpfFarmWord
         /// </summary>
         /// <param name="target">Source for clean in type List<List<string>></param>
         /// <returns>Cleaned table</returns>
-        private static DataTable CleantableFromMess(List<List<string>> targets)
+        private static DataTable CleantableFromMess(List<List<string>> targets, int maxCol)
         {
             DataTable outsource = new DataTable();
-            string markword = "Примечание ";
-            int maxCol = 0; // On 2nd renew need to take it from method ReadWordTables()
+            string markword = "Примечание ";            
             string cleanedArrow = string.Empty;
             foreach (List<string> target in targets)
             {
@@ -236,9 +235,8 @@ namespace WpfFarmWord
                 for (int i = 0; i < maxCol; i++)
                 {
                     string temp = target[i].ToString();
-                    cleanedArrow = cleanFromHyperlinks(temp);
+                    cleanedArrow = CleanFromHyperlinks(temp);
                     target[i] = cleanedArrow;
-                    //target.Insert(i, cleanedArrow);
                 }
             }
            targets = DeleteHeaderAndSubHeaderStrings(targets, markword);
@@ -246,7 +244,12 @@ namespace WpfFarmWord
            return outsource;
         }
 
-        private static string cleanFromHyperlinks(string str)
+        /// <summary>
+        /// Method cleans from hyperlinks hidden by text string
+        /// </summary>
+        /// <param name="str">input string with hyperlink</param>
+        /// <returns> Same string without hyperlink</returns>
+        private static string CleanFromHyperlinks(string str)
         {
             string temp = str;
             string replacement = "";
@@ -273,8 +276,6 @@ namespace WpfFarmWord
             while (temp.Contains("+"));
             return temp;
         }
-
-
 
         /// <summary>
         /// Method deletes from list every row contains mark word
