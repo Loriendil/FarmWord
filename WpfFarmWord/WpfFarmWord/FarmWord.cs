@@ -48,39 +48,55 @@ namespace WpfFarmWord
         /// <param name="filepath">path to source file with data, that populated into tables with hard structure.</param>
         private static void ValidateWordDocument(string filepath)
         {
-            using (WordprocessingDocument wordprocessingDocument =
-            WordprocessingDocument.Open(filepath, true))
+            try
             {
-                StringBuilder @string = new StringBuilder();
-                try
+                using (WordprocessingDocument wordprocessingDocument =
+                        WordprocessingDocument.Open(filepath, true))
                 {
-                    OpenXmlValidator validator = new OpenXmlValidator();
-                    int count = 0;
-                    foreach (ValidationErrorInfo error in
-                        validator.Validate(wordprocessingDocument))
+                    StringBuilder @string = new StringBuilder();
+                    try
                     {
-                        count++;
-                        @string.Append("Error " + count);
-                        @string.Append("Description: " + error.Description+"\n");
-                        @string.Append("ErrorType: " + error.ErrorType + "\n");
-                        @string.Append("Node: " + error.Node + "\n");
-                        @string.Append("Path: " + error.Path.XPath + "\n");
-                        @string.Append("Part: " + error.Part.Uri + "\n");
+                        OpenXmlValidator validator = new OpenXmlValidator();
+                        int count = 0;
+                        foreach (ValidationErrorInfo error in
+                            validator.Validate(wordprocessingDocument))
+                        {
+                            count++;
+                            @string.Append("Error " + count);
+                            @string.Append("Description: " + error.Description + "\n");
+                            @string.Append("ErrorType: " + error.ErrorType + "\n");
+                            @string.Append("Node: " + error.Node + "\n");
+                            @string.Append("Path: " + error.Path.XPath + "\n");
+                            @string.Append("Part: " + error.Part.Uri + "\n");
+                        }
+
+                        @string.Append("Total count =" + count);
+                        if (count != 0)
+                        {
+                            MessageBox.Show(@string.ToString());
+                        }
                     }
 
-                    @string.Append("Total count =" + count);
-                    if (count != 0)
+                    catch (Exception ex)
                     {
-                        MessageBox.Show(@string.ToString());
+                        Console.WriteLine(ex.Message);
                     }
-                }
 
-                catch (Exception ex)
-                {
-                    Console.WriteLine(ex.Message);
+                    wordprocessingDocument.Close();
                 }
+            }
+            catch (FileFormatException ex)
+            {
+                MessageBox.Show(ex.ToString());
 
-                wordprocessingDocument.Close();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.ToString());
+            }
+            finally
+            {
+                Application.Current.Shutdown();
             }
         }
 

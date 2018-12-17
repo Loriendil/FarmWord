@@ -27,7 +27,9 @@ namespace WpfFarmWord
 
         private void Button_Click(object sender, RoutedEventArgs e)
         {
-            string filename = "\\004.docx";
+            //string filename = "\\004.docx"; // dummy
+            //string filename = "\\r004.rtf"; // rtf <= WordpressingPL dont work with it!
+            string filename = "\\d004.docx"; // docx
             string path = System.IO.Path.
                 GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
             FarmWord fw = new FarmWord(filename, path);
